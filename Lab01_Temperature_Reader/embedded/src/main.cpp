@@ -1,13 +1,3 @@
-// #include <Arduino.h>
-
-// void setup() {
-  
-// }
-
-// void loop() {
-//   // put your main code here, to run repeatedly:
-// }
-
 //   //what for startup
 //   //ESP32 dev board espressif32
 //   //main loop
@@ -16,8 +6,9 @@
 
 //   //busy wait when switch is off
 
+#include "networking.h"
 
-  #include <Arduino.h>
+#include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -30,20 +21,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Connect DallasTemperature to the OneWire bus
 DallasTemperature sensors(&oneWire);
 
-void setup()
-{
-    // Start Serial Monitor
-    Serial.begin(115200);
-
-    // Start the temperature sensor
-    sensors.begin();
-
-    Serial.println("DS18B20 Temperature Sensor");
-    Serial.println("--------------------------");
-}
-
-void loop()
-{
+float readTemperature() {
     // Ask the DS18B20 to measure the temperature
     sensors.requestTemperatures();
 
@@ -54,7 +32,63 @@ void loop()
     Serial.print("Temperature: ");
     Serial.print(temperatureC);
     Serial.println(" °C");
+}
 
-    // Wait 2 seconds
-    delay(2000);
+void setup() {
+
+    // Start Serial Monitor
+    Serial.begin(115200);
+
+    // Start the temperature sensor
+    sensors.begin();
+
+    Serial.println("DS18B20 Temperature Sensor");
+    Serial.println("--------------------------");
+
+    // Connect to wifi
+    connectWiFi();
+
+    // Update initial device state on database
+    applySensorState();
+}
+
+void loop() {
+
+    unsigned long now = millis();
+
+    // ----------------------------
+    // Check commands
+    // ----------------------------
+    if (
+        now - lastCommandCheck >=
+        COMMAND_INTERVAL
+    ) {
+        lastCommandCheck = now;
+        checkCommands();
+    }
+
+    // ----------------------------
+    // Send temperature
+    // ----------------------------
+    if (
+        temperatureSensorEnabled
+        && now - lastTemperatureUpload >= TEMPERATURE_INTERVAL
+    ) {
+
+        lastTemperatureUpload = now;
+
+        float temperature = readTemperature();
+
+        Serial.print(
+            "Temperature: "
+        );
+
+        Serial.println(
+            temperature
+        );
+
+        uploadTemperature(
+            temperature
+        );
+    }
 }

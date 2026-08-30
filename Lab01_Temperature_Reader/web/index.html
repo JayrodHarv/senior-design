@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ESP32 Temperature Monitor</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <main class="container">
+
+        <header>
+            <h1>Temperature Monitor</h1>
+
+            <div id="connection-status" class="status">
+                Connecting...
+            </div>
+        </header>
+
+
+        <!-- Current Temperature -->
+
+        <section class="card">
+
+            <h2>Current Temperature</h2>
+
+            <div id="current-temperature">
+                -- °F
+            </div>
+
+            <div id="last-update">
+                Waiting for data...
+            </div>
+
+        </section>
+
+
+        <!-- Temperature Graph -->
+
+        <section class="card">
+
+            <h2>Temperature — Last 300 Seconds</h2>
+
+            <div class="chart-container">
+                <canvas id="temperature-chart"></canvas>
+            </div>
+
+        </section>
+
+
+        <!-- Controls -->
+
+        <section class="card">
+
+            <h2>Temperature Sensors</h2>
+
+
+            <!-- Temperature Sensor 1 -->
+
+            <div class="sensor-control">
+
+                <div>
+                    <h3>Temperature Sensor 1</h3>
+
+                    <div>
+                        <span>Status:</span>
+
+                        <strong id="sensor-1-status">
+                            Unknown
+                        </strong>
+                    </div>
+                </div>
+
+
+                <div class="buttons">
+
+                    <button
+                        id="sensor-1-on"
+                        onclick="setSensor(1, true)"
+                    >
+                        Turn ON
+                    </button>
+
+                    <button
+                        id="sensor-1-off"
+                        onclick="setSensor(1, false)"
+                    >
+                        Turn OFF
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Temperature Sensor 2 -->
+
+            <div class="sensor-control">
+
+                <div>
+                    <h3>Temperature Sensor 2</h3>
+
+                    <div>
+                        <span>Status:</span>
+
+                        <strong id="sensor-2-status">
+                            Unknown
+                        </strong>
+                    </div>
+                </div>
+
+
+                <div class="buttons">
+
+                    <button
+                        id="sensor-2-on"
+                        onclick="setSensor(2, true)"
+                    >
+                        Turn ON
+                    </button>
+
+                    <button
+                        id="sensor-2-off"
+                        onclick="setSensor(2, false)"
+                    >
+                        Turn OFF
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div id="command-status"></div>
+
+        </section>
+
+    </main>
+
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
