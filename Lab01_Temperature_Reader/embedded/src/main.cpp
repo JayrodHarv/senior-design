@@ -22,6 +22,8 @@ void setup() {
     Serial.println("DS18B20 Temperature Sensor");
     Serial.println("--------------------------");
 
+    // Initialize lcd display
+
     // Connect to wifi
     connectWiFi();
 
@@ -30,6 +32,8 @@ void setup() {
 }
 
 void loop() {
+
+    //button logic to turn off temperature sensor
 
     unsigned long now = millis();
 
@@ -68,4 +72,5 @@ void loop() {
             temperature
         );
     }
+    //update lcd display with temperature
 }
