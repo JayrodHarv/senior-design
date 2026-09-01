@@ -3,6 +3,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+#include "network.h"
+
 // ============================================
 // WIFI
 // ============================================
@@ -31,9 +33,9 @@ unsigned long lastTemperatureUpload = 0;
 
 unsigned long lastCommandCheck = 0;
 
-const unsigned long TEMPERATURE_INTERVAL = 1000;
+unsigned long TEMPERATURE_INTERVAL = 1000;
 
-const unsigned long COMMAND_INTERVAL = 250;
+unsigned long COMMAND_INTERVAL = 250;
 
 // ============================================
 // SENSOR STATE
