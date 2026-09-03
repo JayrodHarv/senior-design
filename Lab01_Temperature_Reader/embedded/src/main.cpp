@@ -16,6 +16,9 @@ void setup() {
     // Start Serial Monitor
     Serial.begin(115200);
 
+    // Connect to wifi
+    setupNetwork();
+
     // Start the temperature sensor
     sensors.begin();
 
@@ -23,9 +26,6 @@ void setup() {
     Serial.println("--------------------------");
 
     // Initialize lcd display
-
-    // Connect to wifi
-    connectWiFi();
 
     // Update initial device state on database
     applySensorState();
