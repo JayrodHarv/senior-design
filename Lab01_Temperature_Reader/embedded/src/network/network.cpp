@@ -2,33 +2,26 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <WiFiManager.h>
 
 #include "network.h"
 
 // ============================================
-// WIFI
-// ============================================
-const char* WIFI_SSID =
-    "YOUR_WIFI_NAME";
-
-const char* WIFI_PASSWORD =
-    "YOUR_WIFI_PASSWORD";
-
-// ============================================
 // SUPABASE
 // ============================================
+
 const char* SUPABASE_URL =
     "https://witvuhdpcpfolevfjapq.supabase.co";
 
 const char* SUPABASE_KEY =
     "sb_publishable_sbNdNAgtIPJu5M8eq8u4uQ_yZfwFBnN";
 
-const char* DEVICE_ID =
-    "esp32-001";
+const int DEVICE_ID = 1;
 
 // ============================================
 // TIMING
 // ============================================
+
 unsigned long lastTemperatureUpload = 0;
 
 unsigned long lastCommandCheck = 0;
@@ -40,46 +33,47 @@ unsigned long COMMAND_INTERVAL = 250;
 // ============================================
 // SENSOR STATE
 // ============================================
+
 bool temperatureSensorEnabled = true;
 
 // ============================================
 // WIFI CONNECTION
 // ============================================
-void connectWiFi() {
 
-    Serial.println("Connecting to WiFi...");
+// Creates temperary access point to connect to, 
+// then displays an interface to select SSID and credentials after connecting to it.
+void setupNetwork() {
 
-    WiFi.begin(
-        WIFI_SSID,
-        WIFI_PASSWORD
-    );
+    WiFiManager wifiManager;
 
-    while (
-        WiFi.status() != WL_CONNECTED
-    ) {
+    Serial.println("Starting Wi-Fi...");
 
-        delay(500);
-        Serial.print(".");
+    // Connect using saved credentials.
+    // If no credentials are saved, create the ESP32-Setup
+    // access point and allow the user to configure Wi-Fi.
+    if (!wifiManager.autoConnect("ESP32-Setup")) {
+        Serial.println("Failed to connect to Wi-Fi.");
+        Serial.println("Restarting...");
+        ESP.restart();
     }
 
     Serial.println();
+    Serial.println("Wi-Fi connected!");
+    Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());
 
-    Serial.println(
-        "WiFi connected!"
-    );
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
 
-    Serial.print(
-        "IP address: "
-    );
-
-    Serial.println(
-        WiFi.localIP()
-    );
+    Serial.print("Signal strength: ");
+    Serial.print(WiFi.RSSI());
+    Serial.println(" dBm");
 }
 
 // ============================================
 // SUPABASE HEADERS
 // ============================================
+
 void addSupabaseHeaders(
     HTTPClient& http
 ) {
@@ -102,6 +96,7 @@ void addSupabaseHeaders(
 // ============================================
 // UPLOAD TEMPERATURE
 // ============================================
+
 void uploadTemperature(
     float temperature
 ) {
@@ -298,6 +293,7 @@ void checkCommands() {
 // ============================================
 // APPLY SENSOR STATE
 // ============================================
+
 void applySensorState() {
     /*
      * Replace this with the actual

@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // Networking functions
-void connectWiFi();
+void setupNetwork();
 void checkCommands();
 void uploadTemperature(float temperature);
 void applySensorState();

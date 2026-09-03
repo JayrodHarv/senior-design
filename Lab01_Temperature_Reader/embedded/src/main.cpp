@@ -19,6 +19,9 @@ void setup() {
     // Start Serial Monitor
     Serial.begin(115200);
 
+    // Connect to wifi
+    setupNetwork();
+
     // Start the temperature sensor
     sensor1.begin();
     sensor2.begin();
