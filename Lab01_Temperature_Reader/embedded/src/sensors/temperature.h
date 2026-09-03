@@ -16,10 +16,10 @@
 extern OneWire oneWire;
 extern OneWire oneWire2;
 // Connect DallasTemperature to the OneWire bus
-extern DallasTemperature sensors;
-extern DallasTemperature sensors2;
+extern DallasTemperature sensor1;
+extern DallasTemperature sensor2;
 // Functions
-float readTemperature();
-
+float readTemperature(DallasTemperature& sensors);
+bool tempStatusCheck(DallasTemperature& sensors);
 
 #endif
