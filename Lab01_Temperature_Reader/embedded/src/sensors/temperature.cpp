@@ -5,6 +5,9 @@ bool tempStatusCheck(DallasTemperature& sensors, bool sensorEnabled) {
         Serial.println("Sensor is disabled");
         return false; // Return false if the sensor is disabled
     }
+
+    sensors.requestTemperatures(); // Request temperature readings from the sensor
+
     if(sensors.getTempCByIndex(0) == DEVICE_DISCONNECTED_C) {
         Serial.println("No Device Connected");
         return false; // Return false to indicate device disconnected or device disabled
