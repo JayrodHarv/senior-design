@@ -37,7 +37,7 @@ jobs:
       - name: Upload web folder
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./web"
+          path: "./Lab01_Temperature_Reader/web"
 
       - name: Deploy to GitHub Pages
         id: deployment
