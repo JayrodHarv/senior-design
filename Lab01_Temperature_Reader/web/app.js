@@ -188,6 +188,48 @@ async function setSensor(sensor, enabled) {
     });
 }
 
+async function loadAlertSettings() {
+    const { data, error } = await client.from("alert_settings")
+        .select("sensor_id,max_temp,min_temp,contact_email,high_message,low_message")
+        .in("sensor_id", SENSOR_IDS);
+    if (error) {
+        console.error("Could not load alert settings:", error);
+        return;
+    }
+    data.forEach((row) => {
+        element(`max-temp-${row.sensor_id}`).value = row.max_temp ?? "";
+        element(`min-temp-${row.sensor_id}`).value = row.min_temp ?? "";
+        element(`contact-email-${row.sensor_id}`).value = row.contact_email ?? "";
+        element(`high-message-${row.sensor_id}`).value = row.high_message ?? "";
+        element(`low-message-${row.sensor_id}`).value = row.low_message ?? "";
+    });
+}
+
+async function saveAlertSettings(sensor) {
+    if (!SENSOR_IDS.includes(Number(sensor))) return;
+
+    const statusEl = element(`alert-status-${sensor}`);
+    statusEl.textContent = "Saving...";
+
+    const maxTemp = Number(element(`max-temp-${sensor}`).value);
+    const minTemp = Number(element(`min-temp-${sensor}`).value);
+    if (!Number.isFinite(maxTemp) || !Number.isFinite(minTemp) || maxTemp <= minTemp) {
+        statusEl.textContent = "❌ Max temperature must be greater than min temperature";
+        return;
+    }
+
+    const { error } = await client.from("alert_settings").update({
+        max_temp: maxTemp,
+        min_temp: minTemp,
+        contact_email: element(`contact-email-${sensor}`).value,
+        high_message: element(`high-message-${sensor}`).value,
+        low_message: element(`low-message-${sensor}`).value
+    }).eq("sensor_id", sensor);
+
+    statusEl.textContent = error ? "❌ Could not save alert settings" : "✓ Alert settings saved";
+    if (error) console.error("Alert settings save failed:", error);
+}
+
 client.channel("temperature-monitor")
     .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "temperature_readings"
@@ -212,3 +254,4 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 refresh();
+loadAlertSettings();

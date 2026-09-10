@@ -106,6 +106,56 @@
             </div>
             <div id="command-status"></div>
         </section>
+        <!-- Alert Settings -->
+        <section class="card">
+            <h2>Temperature Alerts</h2>
+            <div class="alert-settings">
+                <div class="alert-control sensor-alert-1">
+                    <h3>Sensor 1 Alerts</h3>
+                    <div class="alert-fields">
+                        <label>Max temperature (°C)
+                            <input type="number" id="max-temp-1" step="0.1">
+                        </label>
+                        <label>Min temperature (°C)
+                            <input type="number" id="min-temp-1" step="0.1">
+                        </label>
+                        <label>Contact email
+                            <input type="email" id="contact-email-1">
+                        </label>
+                        <label>High temperature message
+                            <input type="text" id="high-message-1">
+                        </label>
+                        <label>Low temperature message
+                            <input type="text" id="low-message-1">
+                        </label>
+                    </div>
+                    <button class="save-alert" onclick="saveAlertSettings(1)">Save Sensor 1 Alerts</button>
+                    <div id="alert-status-1" class="alert-status"></div>
+                </div>
+                <div class="alert-control sensor-alert-2">
+                    <h3>Sensor 2 Alerts</h3>
+                    <div class="alert-fields">
+                        <label>Max temperature (°C)
+                            <input type="number" id="max-temp-2" step="0.1">
+                        </label>
+                        <label>Min temperature (°C)
+                            <input type="number" id="min-temp-2" step="0.1">
+                        </label>
+                        <label>Contact email
+                            <input type="email" id="contact-email-2">
+                        </label>
+                        <label>High temperature message
+                            <input type="text" id="high-message-2">
+                        </label>
+                        <label>Low temperature message
+                            <input type="text" id="low-message-2">
+                        </label>
+                    </div>
+                    <button class="save-alert" onclick="saveAlertSettings(2)">Save Sensor 2 Alerts</button>
+                    <div id="alert-status-2" class="alert-status"></div>
+                </div>
+            </div>
+        </section>
     </main>
     <script src="app.js"></script>
 </body>

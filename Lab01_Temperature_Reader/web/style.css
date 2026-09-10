@@ -131,3 +131,59 @@ button:active {
 }
 .sensor-1 .temperature { color: #dc2626; }
 .sensor-2 .temperature { color: #2563eb; }
+
+.alert-settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+.alert-control {
+    flex: 1 1 320px;
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 18px;
+}
+.alert-control h3 {
+    margin: 0 0 14px 0;
+    font-size: 18px;
+}
+.sensor-alert-1 h3 { color: #dc2626; }
+.sensor-alert-2 h3 { color: #2563eb; }
+.alert-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.alert-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    color: #444;
+}
+.alert-fields input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    color: inherit;
+    font: inherit;
+}
+.save-alert {
+    background: #2563eb;
+    color: white;
+    width: 100%;
+}
+.alert-status {
+    margin-top: 10px;
+    color: #666;
+    font-size: 14px;
+    min-height: 1.2em;
+}
+@media (max-width: 700px) {
+    .alert-control {
+        flex-basis: 100%;
+    }
+}
