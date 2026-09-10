@@ -1,148 +1,115 @@
-
-#include "network/network.h"
-#include "sensors/temperature.h"
-#include <LiquidCrystal.h>
 #include <Arduino.h>
 
-// Initialize the LCD with the appropriate pins
-LiquidCrystal lcd(14, 27, 26, 25, 33, 32);
+#include "AppState.h"
 
-volatile bool button1Interrupt = false; // Flag to indicate button 1 interrupt
-volatile bool button2Interrupt = false; // Flag to indicate button 2 interrupt
+#include "NetworkManager.h"
+#include "SensorManager.h"
+#include "ButtonManager.h"
+#include "DisplayManager.h"
+#include "SupabaseClient.h"
 
-void IRAM_ATTR handleButton1Interrupt() {
-    button1Interrupt = true; // Set the flag when button 1 is pressed
-}
-
-void IRAM_ATTR handleButton2Interrupt() {
-    button2Interrupt = true; // Set the flag when button 2 is pressed
-}
+#include "Config.h"
 
 
-void setup() {
-    pinMode(ButtonPin1, INPUT_PULLUP); // Set button pin 1 as input with pull-up resistor
-    pinMode(ButtonPin2, INPUT_PULLUP); // Set button pin 2 as input
-    // Start Serial Monitor
+AppState appState;
+
+NetworkManager network;
+SensorManager sensors(appState);
+ButtonManager buttons(appState);
+DisplayManager display;
+SupabaseClient cloud;
+
+
+unsigned long lastSensorRead = 0;
+unsigned long lastStateCheck = 0;
+
+constexpr unsigned long SENSOR_INTERVAL = 1000;
+constexpr unsigned long STATE_CHECK_INTERVAL = 500;
+
+
+void setup()
+{
     Serial.begin(115200);
 
-    attachInterrupt(digitalPinToInterrupt(ButtonPin1), handleButton1Interrupt, FALLING); // Attach interrupt for button 1
-    attachInterrupt(digitalPinToInterrupt(ButtonPin2), handleButton2Interrupt, FALLING); // Attach interrupt for button 2
+    delay(500);
 
-    // Connect to wifi
-    // setupNetwork();
+    Serial.println();
+    Serial.println("==============================");
+    Serial.println(" ESP32 Temperature Monitor");
+    Serial.println("==============================");
 
-    // Start the temperature sensor
-    sensor1.begin();
-    sensor2.begin();
+    sensors.begin();
+    buttons.begin();
+    display.begin();
 
-    Serial.println("DS18B20 Temperature Sensor");
-    Serial.println("--------------------------");
-
-    // Initialize lcd display
-     lcd.begin(16, 2);
-   
-    // Update initial device state on database
-    //applySensorState();
+    network.begin();
 }
 
-void loop() {
 
-    bool rawButton1State = digitalRead(ButtonPin1);
-    bool rawButton2State = digitalRead(ButtonPin2);
-    
-   if(button1Interrupt) {
-        button1Interrupt = false;
+void loop()
+{
+    network.update();
 
-        temperatureSensor1Enabled = !temperatureSensor1Enabled;
+    buttons.update();
 
-        Serial.println("Button 1 pressed");
+    display.update(
+        appState,
+        network.isConnected()
+    );
 
-        if(temperatureSensor1Enabled) {
-            Serial.println("Sensor 1 enabled");
-        } else {
-            Serial.println("Sensor 1 disabled");
-        }
+
+    unsigned long now =
+        millis();
+
+
+    // =========================================
+    // Send physical button changes
+    // =========================================
+
+    if (network.isConnected())
+    {
+        cloud.sendPendingStateChanges(
+            appState
+        );
     }
 
-    if(button2Interrupt) {
-        button2Interrupt = false;
 
-        temperatureSensor2Enabled = !temperatureSensor2Enabled;
+    // =========================================
+    // Read sensors + upload temperature
+    // =========================================
 
-        Serial.println("Button 2 pressed");
-
-        if(temperatureSensor2Enabled) {
-            Serial.println("Sensor 2 enabled");
-        } else {
-            Serial.println("Sensor 2 disabled");
-        }
-    }
-
-    if(temperatureSensor1Enabled) {
-        //needs tied to the unique sensor id
-        //will be number 1
-        if(tempStatusCheck(sensor1, temperatureSensor1Enabled) == false){
-            //display to lcd that no device is connected
-            lcd.setCursor(0, 0);
-            lcd.print("No Device         ");
-        } else {
-            float temperature = readTemperature(sensor1);
-            uploadTemperature(temperature);
-            lcd.setCursor(0, 0);
-            lcd.print("Temp: " + String(temperature) + " C       ");
-            //upload temp to database
-        }
-    } else {
-        lcd.setCursor(0, 0);
-        lcd.print("Sensor 1 Disabled     ");
-    }
-       
-
-    if(temperatureSensor2Enabled) {
-
-        if(tempStatusCheck(sensor2, temperatureSensor2Enabled) == false) {
-
-            lcd.setCursor(0, 1);
-            lcd.print("No Device       ");
-
-        } else {
-
-            float temperature = readTemperature(sensor2);
-            uploadTemperature(temperature);
-
-            lcd.setCursor(0, 1);
-            lcd.print("Temp: " + String(temperature) + " C       ");
-        }
-
-    } else {
-
-        lcd.setCursor(0, 1);
-        lcd.print("Sensor 2 Disabled");
-    }
-    
-    unsigned long now = millis();
-
-    // ----------------------------
-    // Check commands
-    // ----------------------------
     if (
-        now - lastCommandCheck >=
-        COMMAND_INTERVAL
-    ) {
-        lastCommandCheck = now;
-        checkCommands();
+        now - lastSensorRead >=
+        SENSOR_INTERVAL
+    )
+    {
+        lastSensorRead = now;
+
+        sensors.read();
+
+        if (network.isConnected())
+        {
+            cloud.sendReadings(
+                appState
+            );
+        }
     }
 
-    // ----------------------------
-    // Send temperature
-    // ----------------------------
+
+    // =========================================
+    // Check for web UI state changes
+    // =========================================
+
     if (
-        temperatureSensorEnabled
-        && now - lastTemperatureUpload >= TEMPERATURE_INTERVAL
-    ) {
+        network.isConnected() &&
+        now - lastStateCheck >=
+        STATE_CHECK_INTERVAL
+    )
+    {
+        lastStateCheck = now;
 
-        lastTemperatureUpload = now;
- 
+        cloud.fetchSensorStates(
+            appState
+        );
     }
-   
 }
