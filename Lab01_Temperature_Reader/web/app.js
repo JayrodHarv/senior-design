@@ -157,16 +157,35 @@ async function refresh() {
 }
 
 async function setSensor(sensor, enabled) {
-    element("command-status").textContent = `Sending Sensor ${sensor} command...`;
-    const { error } = await client.from("device_commands").insert({
-        device_id: 1,
-        command: `temperature_sensor_${sensor}`,
-        value: enabled
+    if (!SENSOR_IDS.includes(Number(sensor))) return;
+
+    element("command-status").textContent =
+        `Setting Sensor ${sensor} ${enabled ? "ON" : "OFF"}...`;
+
+    const { error } = await client
+        .from("sensor_state")
+        .update({ enabled })
+        .eq("sensor_id", sensor);
+
+    if (error) {
+        element("command-status").textContent =
+            `❌ Could not update Sensor ${sensor}`;
+
+        console.error(
+            "Sensor state update failed:",
+            error
+        );
+
+        return;
+    }
+
+    element("command-status").textContent =
+        `✓ Sensor ${sensor} set to ${enabled ? "ON" : "OFF"}; awaiting device confirmation`;
+
+    updateSensorStatus({
+        sensor_id: sensor,
+        enabled
     });
-    element("command-status").textContent = error
-        ? `❌ Sensor ${sensor} command failed`
-        : `✓ Sensor ${sensor} ${enabled ? "ON" : "OFF"} command sent; awaiting device confirmation`;
-    if (error) console.error("Command failed:", error);
 }
 
 client.channel("temperature-monitor")
