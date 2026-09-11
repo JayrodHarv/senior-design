@@ -35,7 +35,7 @@ function createSensorDataset(id, index) {
         borderColor: color,
         backgroundColor: color,
         borderWidth: 2,
-        pointRadius: 3,
+        pointRadius: 1,
         pointHoverRadius: 5,
         cubicInterpolationMode: "monotone",
 

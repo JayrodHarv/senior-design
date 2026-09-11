@@ -14,7 +14,7 @@ namespace Config
 
     constexpr const char* AP_PASSWORD =
         "TempSetup123";
-        
+
     // -------------------------------------------------
     // Temperature sensors
     // -------------------------------------------------
@@ -58,6 +58,7 @@ namespace Config
     // -------------------------------------------------
 
     constexpr unsigned long SENSOR_INTERVAL_MS = 1000;
+    constexpr unsigned long STATE_CHECK_INTERVAL_MS = 5000;
     constexpr unsigned long DISPLAY_INTERVAL_MS = 250;
     constexpr unsigned long WIFI_RETRY_INTERVAL_MS = 10000;
     constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;

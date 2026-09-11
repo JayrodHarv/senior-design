@@ -23,9 +23,6 @@ SupabaseClient cloud;
 unsigned long lastSensorRead = 0;
 unsigned long lastStateCheck = 0;
 
-constexpr unsigned long SENSOR_INTERVAL = 1000;
-constexpr unsigned long STATE_CHECK_INTERVAL = 500;
-
 
 void setup()
 {
@@ -89,7 +86,7 @@ void loop()
 
     if (
         now - lastSensorRead >=
-        SENSOR_INTERVAL
+        Config::SENSOR_INTERVAL_MS
     )
     {
         lastSensorRead = now;
@@ -112,7 +109,7 @@ void loop()
     if (
         network.isConnected() &&
         now - lastStateCheck >=
-        STATE_CHECK_INTERVAL
+        Config::STATE_CHECK_INTERVAL_MS
     )
     {
         lastStateCheck = now;

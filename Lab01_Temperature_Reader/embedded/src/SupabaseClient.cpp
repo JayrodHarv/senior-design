@@ -45,7 +45,6 @@ bool SupabaseClient::sendReadings(
         return false;
     }
 
-
     // -----------------------------------------------------
     // Build JSON array
     //
@@ -125,28 +124,36 @@ bool SupabaseClient::sendReadings(
         "/rest/v1/temperature_readings";
 
 
-    WiFiClientSecure client;
-
-    client.setInsecure();
-
-
-    HTTPClient http;
-
-    if (!http.begin(client, url))
+    if (!readingsHttpInitialized_)
     {
-        Serial.println(
-            "[Cloud] Could not start readings request"
-        );
+        readingsClient_.setInsecure();
 
-        return false;
+        if (!readingsHttp_.begin(
+                readingsClient_,
+                url))
+        {
+            Serial.println(
+                "[Cloud] Could not start readings request"
+            );
+
+            return false;
+        }
+
+        readingsHttp_.setReuse(true);
+
+        readingsHttpInitialized_ = true;
     }
 
+    addHeaders(readingsHttp_);
 
-    addHeaders(http);
-
+    unsigned long start = millis();
 
     int responseCode =
-        http.POST(body);
+        readingsHttp_.POST(body);
+
+    Serial.print("[Cloud] Upload took ");
+    Serial.print(millis() - start);
+    Serial.println(" ms");
 
 
     bool success =
@@ -171,12 +178,9 @@ bool SupabaseClient::sendReadings(
         );
 
         Serial.println(
-            http.getString()
+            readingsHttp_.getString()
         );
     }
-
-
-    http.end();
 
     return success;
 }
@@ -340,7 +344,6 @@ bool SupabaseClient::fetchSensorStates(
     {
         return false;
     }
-
 
     String response;
 
