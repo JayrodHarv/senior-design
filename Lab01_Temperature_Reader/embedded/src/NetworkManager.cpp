@@ -4,59 +4,19 @@
 
 void NetworkManager::begin()
 {
-    Serial.println("[WiFi] Initializing WiFiManager...");
+    Serial.println("[WiFi] Initializing...");
 
-    // Explicitly use station mode.
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP_STA);
 
-    /*
-     * IMPORTANT:
-     *
-     * Non-blocking configuration portal.
-     *
-     * This allows the rest of the ESP32 application
-     * to continue running while the user configures
-     * Wi-Fi.
-     */
     wifiManager_.setConfigPortalBlocking(false);
-
-    // Explicitly enable captive portal behavior.
     wifiManager_.setCaptivePortalEnable(true);
-
-    wifiManager_.setWiFiAPChannel(1);
-
-    /*
-     * Automatically reconnect if the Wi-Fi
-     * connection is temporarily lost.
-     */
     wifiManager_.setWiFiAutoReconnect(true);
 
-    /*
-     * Start by attempting the previously saved
-     * Wi-Fi network.
-     *
-     * If there is no saved network, or the saved
-     * network cannot be reached, WiFiManager starts
-     * its configuration access point.
-     */
-    bool connected =
-        wifiManager_.autoConnect(AP_NAME);
+    // Try to connect using previously saved credentials.
+    WiFi.begin();
 
-    if (connected)
-    {
-        Serial.println("[WiFi] Connected using saved credentials");
-
-        printConnectionStatus();
-    }
-    else
-    {
-        Serial.println("[WiFi] Configuration portal started");
-        Serial.print("[WiFi] Connect to AP: ");
-        Serial.println(AP_NAME);
-
-        Serial.println("[WiFi] Open:");
-        Serial.println("[WiFi] http://192.168.4.1");
-    }
+    // Start WiFiManager's configuration AP + web UI.
+    startConfigPortal();
 
     wasConnected_ = isConnected();
 }
@@ -113,7 +73,7 @@ void NetworkManager::startConfigPortal()
         "[WiFi] Starting configuration portal..."
     );
 
-    wifiManager_.startConfigPortal(AP_NAME);
+    wifiManager_.startConfigPortal(AP_NAME, AP_PASSWORD);
 
     Serial.print("[WiFi] Connect to AP: ");
     Serial.println(AP_NAME);

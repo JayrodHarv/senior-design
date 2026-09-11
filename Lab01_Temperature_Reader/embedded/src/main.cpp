@@ -48,6 +48,10 @@ void setup()
 
 void loop()
 {
+
+    // Serial.print("ESP32 MAC Address: ");
+    // Serial.println(WiFi.macAddress());
+
     network.update();
 
     buttons.update();
