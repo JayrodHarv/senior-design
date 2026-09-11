@@ -51,11 +51,54 @@ void ButtonManager::begin()
 
 void ButtonManager::update()
 {
-    static unsigned long lastButton1Time = 0;
-    static unsigned long lastButton2Time = 0;
 
     unsigned long now = millis();
 
+    bool button1Down =
+        digitalRead(Config::BUTTON_1_PIN) == LOW;
+
+    bool button2Down =
+        digitalRead(Config::BUTTON_2_PIN) == LOW;
+
+    // =========================================
+    // Both buttons held for 3 seconds
+    // =========================================
+
+    if (button1Down && button2Down)
+    {
+        if (bothButtonsPressedSince_ == 0)
+        {
+            bothButtonsPressedSince_ = now;
+        }
+
+        if (
+            !networkConfigTriggered_ &&
+            now - bothButtonsPressedSince_ >=
+                Config::NETWORK_CONFIG_HOLD_MS
+        )
+        {
+            networkConfigTriggered_ = true;
+            networkConfigRequested_ = true;
+
+            Serial.println(
+                "[Buttons] Wi-Fi setup requested"
+            );
+        }
+
+        button1Pressed_ = false;
+        button2Pressed_ = false;
+
+        return;
+    }
+    else
+    {
+        bothButtonsPressedSince_ = 0;
+        networkConfigTriggered_ = false;
+    }
+
+
+    static unsigned long lastButton1Time = 0;
+    static unsigned long lastButton2Time = 0;
 
     if (button1Pressed_)
     {
@@ -93,6 +136,18 @@ void ButtonManager::update()
             );
         }
     }
+}
+
+bool ButtonManager::consumeNetworkConfigRequest()
+{
+    if (!networkConfigRequested_)
+    {
+        return false;
+    }
+
+    networkConfigRequested_ = false;
+
+    return true;
 }
 
 

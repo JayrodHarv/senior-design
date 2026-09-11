@@ -56,6 +56,11 @@ void loop()
 
     buttons.update();
 
+    if (buttons.consumeNetworkConfigRequest())
+    {
+        network.startConfigPortal();
+    }
+
     display.update(
         appState,
         network.isConnected()

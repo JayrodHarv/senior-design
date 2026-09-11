@@ -1,4 +1,5 @@
 #include "NetworkManager.h"
+#include "Config.h"
 
 #include <WiFi.h>
 
@@ -6,17 +7,16 @@ void NetworkManager::begin()
 {
     Serial.println("[WiFi] Initializing...");
 
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.mode(WIFI_STA);
 
     wifiManager_.setConfigPortalBlocking(false);
     wifiManager_.setCaptivePortalEnable(true);
     wifiManager_.setWiFiAutoReconnect(true);
 
-    // Try to connect using previously saved credentials.
-    WiFi.begin();
-
-    // Start WiFiManager's configuration AP + web UI.
-    startConfigPortal();
+    wifiManager_.autoConnect(
+        Config::AP_NAME,
+        Config::AP_PASSWORD
+    );
 
     wasConnected_ = isConnected();
 }
@@ -35,6 +35,8 @@ void NetworkManager::update()
     if (connected && !wasConnected_)
     {
         Serial.println("[WiFi] Connected");
+
+        WiFi.setAutoReconnect(true);
 
         printConnectionStatus();
     }
@@ -62,24 +64,31 @@ void NetworkManager::startConfigPortal()
 {
     if (wifiManager_.getConfigPortalActive())
     {
-        Serial.println(
-            "[WiFi] Configuration portal already active"
-        );
-
         return;
     }
 
     Serial.println(
-        "[WiFi] Starting configuration portal..."
+        "[WiFi] Entering configuration mode..."
     );
 
-    wifiManager_.startConfigPortal(AP_NAME, AP_PASSWORD);
 
-    Serial.print("[WiFi] Connect to AP: ");
-    Serial.println(AP_NAME);
+    WiFi.setAutoReconnect(false);
 
-    Serial.println("[WiFi] Open:");
-    Serial.println("[WiFi] http://192.168.4.1");
+    wifiManager_.disconnect();
+
+
+    wifiManager_.startConfigPortal(
+        Config::AP_NAME,
+        Config::AP_PASSWORD
+    );
+
+
+    Serial.print("[WiFi] AP: ");
+    Serial.println(Config::AP_NAME);
+
+    Serial.println(
+        "[WiFi] Open http://192.168.4.1"
+    );
 }
 
 void NetworkManager::resetWiFiSettings()

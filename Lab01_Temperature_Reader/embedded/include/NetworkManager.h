@@ -20,11 +20,5 @@ private:
 
     bool wasConnected_ = false;
 
-    static constexpr const char* AP_NAME =
-        "TemperatureMonitor-Setup";
-    
-    static constexpr const char* AP_PASSWORD =
-        "TempSetup123";
-
     void printConnectionStatus();
 };

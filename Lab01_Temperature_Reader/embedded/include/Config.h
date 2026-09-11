@@ -4,6 +4,17 @@
 
 namespace Config
 {
+
+    // -------------------------------------------------
+    // Wi-Fi setup access point
+    // -------------------------------------------------
+
+    constexpr const char* AP_NAME =
+        "TemperatureMonitor-Setup";
+
+    constexpr const char* AP_PASSWORD =
+        "TempSetup123";
+        
     // -------------------------------------------------
     // Temperature sensors
     // -------------------------------------------------
@@ -50,4 +61,6 @@ namespace Config
     constexpr unsigned long DISPLAY_INTERVAL_MS = 250;
     constexpr unsigned long WIFI_RETRY_INTERVAL_MS = 10000;
     constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;
+
+    constexpr unsigned long NETWORK_CONFIG_HOLD_MS = 3000;
 }
