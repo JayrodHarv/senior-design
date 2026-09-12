@@ -22,7 +22,7 @@
             </div>
         </header>
         <!-- Current Temperature -->
-        <section class="card">
+        <section class="card current-card">
             <h2>Current Temperatures</h2>
             <label for="temperature-unit">Temperature unit:</label>
             <select id="temperature-unit" onchange="setTemperatureUnit(this.value)">
@@ -43,14 +43,14 @@
             </div>
         </section>
         <!-- Temperature Graph -->
-        <section class="card">
+        <section class="card chart-card">
             <h2>Temperature — Last 300 Seconds</h2>
             <div class="chart-container">
                 <canvas id="temperature-chart"></canvas>
             </div>
         </section>
         <!-- Controls -->
-        <section class="card">
+        <section class="card controls-card">
             <h2>Temperature Sensors</h2>
             <!-- Temperature Sensor 1 -->
             <div class="sensor-control">
@@ -107,7 +107,7 @@
             <div id="command-status"></div>
         </section>
         <!-- Alert Settings -->
-        <section class="card">
+        <section class="card alerts-card">
             <h2>Temperature Alerts</h2>
             <div class="alert-settings">
                 <div class="alert-control sensor-alert-1">

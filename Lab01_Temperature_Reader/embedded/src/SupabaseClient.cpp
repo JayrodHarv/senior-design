@@ -1,20 +1,105 @@
 #include "SupabaseClient.h"
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <HTTPClient.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
 
 #include "Secrets.h"
+
+namespace
+{
+constexpr uint16_t STATE_FETCH_TIMEOUT_MS = 750;
+}
+
+
+// =========================================================
+// CONNECTION MANAGEMENT
+// =========================================================
+
+bool SupabaseClient::initializeReadingsConnection()
+{
+    if (readingsHttpInitialized_)
+    {
+        return true;
+    }
+
+    const String url =
+        String(SUPABASE_URL) +
+        "/rest/v1/temperature_readings";
+
+    readingsClient_.setInsecure();
+
+    if (!readingsHttp_.begin(readingsClient_, url))
+    {
+        Serial.println(
+            "[Cloud] Could not initialize readings connection"
+        );
+
+        return false;
+    }
+
+    readingsHttp_.setReuse(true);
+    readingsHttpInitialized_ = true;
+
+    return true;
+}
+
+bool SupabaseClient::initializeStateFetchConnection()
+{
+    if (stateFetchHttpInitialized_)
+    {
+        return true;
+    }
+
+    const String url =
+        String(SUPABASE_URL) +
+        "/rest/v1/sensor_state"
+        "?select=sensor_id,enabled"
+        "&order=sensor_id.asc";
+
+    stateFetchClient_.setInsecure();
+
+    if (!stateFetchHttp_.begin(stateFetchClient_, url))
+    {
+        Serial.println(
+            "[Cloud] Could not initialize state connection"
+        );
+
+        return false;
+    }
+
+    stateFetchHttp_.setReuse(true);
+
+    // Do not allow a slow status request to block loop() for seconds.
+    stateFetchHttp_.setTimeout(STATE_FETCH_TIMEOUT_MS);
+
+    stateFetchHttpInitialized_ = true;
+
+    return true;
+}
+
+void SupabaseClient::resetReadingsConnection()
+{
+    readingsHttp_.end();
+    readingsClient_.stop();
+    readingsHttpInitialized_ = false;
+}
+
+void SupabaseClient::resetStateFetchConnection()
+{
+    stateFetchHttp_.end();
+    stateFetchClient_.stop();
+    stateFetchHttpInitialized_ = false;
+}
 
 
 // =========================================================
 // HEADERS
 // =========================================================
 
-void SupabaseClient::addHeaders(
-    HTTPClient& http)
+void SupabaseClient::addHeaders(HTTPClient& http)
 {
     http.addHeader(
         "Content-Type",
@@ -37,129 +122,64 @@ void SupabaseClient::addHeaders(
 // SEND HISTORICAL TEMPERATURE READINGS
 // =========================================================
 
-bool SupabaseClient::sendReadings(
-    const AppState& state)
+bool SupabaseClient::sendReadings(const AppState& state)
 {
     if (WiFi.status() != WL_CONNECTED)
     {
         return false;
     }
 
-    // -----------------------------------------------------
-    // Build JSON array
-    //
-    // [
-    //   {
-    //     "sensor_id": 1,
-    //     "temperature": 23.5
-    //   },
-    //   {
-    //     "sensor_id": 2,
-    //     "temperature": 22.1
-    //   }
-    // ]
-    // -----------------------------------------------------
-
     JsonDocument json;
+    JsonArray readings = json.to<JsonArray>();
 
-    JsonArray readings =
-        json.to<JsonArray>();
-
-
-    // Sensor 1
     if (
         state.sensor1.enabled &&
         state.sensor1.connected &&
         !isnan(state.sensor1.temperatureC)
     )
     {
-        JsonObject reading =
-            readings.add<JsonObject>();
-
+        JsonObject reading = readings.add<JsonObject>();
         reading["sensor_id"] = 1;
-
-        reading["temperature"] =
-            state.sensor1.temperatureC;
+        reading["temperature"] = state.sensor1.temperatureC;
     }
 
-
-    // Sensor 2
     if (
         state.sensor2.enabled &&
         state.sensor2.connected &&
         !isnan(state.sensor2.temperatureC)
     )
     {
-        JsonObject reading =
-            readings.add<JsonObject>();
-
+        JsonObject reading = readings.add<JsonObject>();
         reading["sensor_id"] = 2;
-
-        reading["temperature"] =
-            state.sensor2.temperatureC;
+        reading["temperature"] = state.sensor2.temperatureC;
     }
 
-
-    // Nothing valid to upload.
     if (readings.size() == 0)
     {
         return true;
     }
 
-
     String body;
+    serializeJson(json, body);
 
-    serializeJson(
-        json,
-        body
-    );
-
-
-    // -----------------------------------------------------
-    // Send request
-    // -----------------------------------------------------
-
-    String url =
-        String(SUPABASE_URL) +
-        "/rest/v1/temperature_readings";
-
-
-    if (!readingsHttpInitialized_)
+    if (!initializeReadingsConnection())
     {
-        readingsClient_.setInsecure();
-
-        if (!readingsHttp_.begin(
-                readingsClient_,
-                url))
-        {
-            Serial.println(
-                "[Cloud] Could not start readings request"
-            );
-
-            return false;
-        }
-
-        readingsHttp_.setReuse(true);
-
-        readingsHttpInitialized_ = true;
+        return false;
     }
 
     addHeaders(readingsHttp_);
 
-    unsigned long start = millis();
+    const unsigned long start = millis();
+    const int responseCode = readingsHttp_.POST(body);
+    const unsigned long elapsed = millis() - start;
 
-    int responseCode =
-        readingsHttp_.POST(body);
-
-    Serial.print("[Cloud] Upload took ");
-    Serial.print(millis() - start);
+    Serial.print("[Cloud] Temperature upload took ");
+    Serial.print(elapsed);
     Serial.println(" ms");
 
-
-    bool success =
+    const bool success =
         responseCode >= 200 &&
         responseCode < 300;
-
 
     if (success)
     {
@@ -172,16 +192,18 @@ bool SupabaseClient::sendReadings(
         Serial.print(
             "[Cloud] Temperature upload failed: "
         );
+        Serial.println(responseCode);
 
-        Serial.println(
-            responseCode
-        );
+        if (responseCode > 0)
+        {
+            Serial.println(readingsHttp_.getString());
+        }
 
-        Serial.println(
-            readingsHttp_.getString()
-        );
+        // Recreate the connection on the next scheduled upload.
+        resetReadingsConnection();
     }
 
+    // Do not call readingsHttp_.end() after a successful request.
     return success;
 }
 
@@ -190,44 +212,29 @@ bool SupabaseClient::sendReadings(
 // UPDATE CURRENT SENSOR STATES
 // =========================================================
 
-bool SupabaseClient::updateSensorStates(
-    AppState& state)
+bool SupabaseClient::updateSensorStates(AppState& state)
 {
     if (WiFi.status() != WL_CONNECTED)
     {
         return false;
     }
 
+    const bool sensor1Success =
+        updateSingleSensorState(1, state.sensor1);
 
-    bool sensor1Success =
-        updateSingleSensorState(
-            1,
-            state.sensor1
-        );
+    const bool sensor2Success =
+        updateSingleSensorState(2, state.sensor2);
 
-
-    bool sensor2Success =
-        updateSingleSensorState(
-            2,
-            state.sensor2
-        );
-
-
-    return
-        sensor1Success &&
-        sensor2Success;
+    return sensor1Success && sensor2Success;
 }
 
-bool SupabaseClient::sendPendingStateChanges(
-    AppState& state)
+bool SupabaseClient::sendPendingStateChanges(AppState& state)
 {
     bool success = true;
 
     if (state.sensor1.enabledDirty)
     {
-        if (updateSingleSensorState(
-                1,
-                state.sensor1))
+        if (updateSingleSensorState(1, state.sensor1))
         {
             state.sensor1.enabledDirty = false;
         }
@@ -239,9 +246,7 @@ bool SupabaseClient::sendPendingStateChanges(
 
     if (state.sensor2.enabledDirty)
     {
-        if (updateSingleSensorState(
-                2,
-                state.sensor2))
+        if (updateSingleSensorState(2, state.sensor2))
         {
             state.sensor2.enabledDirty = false;
         }
@@ -254,23 +259,23 @@ bool SupabaseClient::sendPendingStateChanges(
     return success;
 }
 
-
-// =========================================================
-// UPDATE ONE SENSOR STATE
-// =========================================================
-
 bool SupabaseClient::updateSingleSensorState(
     int sensorId,
     SensorState& sensor)
 {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        return false;
+    }
+
     String url =
         String(SUPABASE_URL) +
-        "/rest/v1/sensor_state";
-
-    url +=
+        "/rest/v1/sensor_state"
         "?sensor_id=eq." +
         String(sensorId);
 
+    // State changes are rare, so a short-lived connection keeps the
+    // two continuously reused fixed-endpoint clients independent.
     WiFiClientSecure client;
     client.setInsecure();
 
@@ -281,37 +286,17 @@ bool SupabaseClient::updateSingleSensorState(
         return false;
     }
 
-    http.addHeader(
-        "Content-Type",
-        "application/json"
-    );
-
-    http.addHeader(
-        "apikey",
-        SUPABASE_KEY
-    );
-
-    http.addHeader(
-        "Prefer",
-        "return=minimal"
-    );
+    addHeaders(http);
 
     JsonDocument json;
-
-    json["enabled"] =
-        sensor.enabled;
+    json["enabled"] = sensor.enabled;
 
     String body;
+    serializeJson(json, body);
 
-    serializeJson(
-        json,
-        body
-    );
+    const int responseCode = http.PATCH(body);
 
-    int responseCode =
-        http.PATCH(body);
-
-    bool success =
+    const bool success =
         responseCode >= 200 &&
         responseCode < 300;
 
@@ -325,10 +310,14 @@ bool SupabaseClient::updateSingleSensorState(
     {
         Serial.print("[Cloud] State update failed: ");
         Serial.println(responseCode);
+
+        if (responseCode > 0)
+        {
+            Serial.println(http.getString());
+        }
     }
 
     http.end();
-
     return success;
 }
 
@@ -337,8 +326,7 @@ bool SupabaseClient::updateSingleSensorState(
 // FETCH SENSOR STATES
 // =========================================================
 
-bool SupabaseClient::fetchSensorStates(
-    AppState& state)
+bool SupabaseClient::fetchSensorStates(AppState& state)
 {
     if (WiFi.status() != WL_CONNECTED)
     {
@@ -347,52 +335,31 @@ bool SupabaseClient::fetchSensorStates(
 
     String response;
 
-
     if (!fetchRequest(response))
     {
         return false;
     }
 
-
     JsonDocument json;
 
-
-    DeserializationError error =
-        deserializeJson(
-            json,
-            response
-        );
-
+    const DeserializationError error =
+        deserializeJson(json, response);
 
     if (error)
     {
-        Serial.print(
-            "[Cloud] State JSON error: "
-        );
-
-        Serial.println(
-            error.c_str()
-        );
-
+        Serial.print("[Cloud] State JSON error: ");
+        Serial.println(error.c_str());
         return false;
     }
 
-
-    JsonArray sensors =
-        json.as<JsonArray>();
-
+    JsonArray sensors = json.as<JsonArray>();
 
     for (JsonObject sensorJson : sensors)
     {
-        int sensorId =
-            sensorJson["sensor_id"];
-
-        bool enabled =
-            sensorJson["enabled"];
-
+        const int sensorId = sensorJson["sensor_id"];
+        const bool enabled = sensorJson["enabled"];
 
         SensorState* sensor = nullptr;
-
 
         if (sensorId == 1)
         {
@@ -403,118 +370,70 @@ bool SupabaseClient::fetchSensorStates(
             sensor = &state.sensor2;
         }
 
-
-        if (sensor == nullptr)
+        if (sensor == nullptr || sensor->enabledDirty)
         {
             continue;
         }
 
-
-        /*
-         * If we have a physical button change waiting
-         * to upload, don't overwrite it with an older
-         * cloud value.
-         */
-        if (!sensor->enabledDirty)
+        if (sensor->enabled == enabled)
         {
-            if (sensor->enabled != enabled)
-            {
-                sensor->enabled = enabled;
-
-                if (!enabled)
-                {
-                    sensor->temperatureC =
-                        NAN;
-                }
-
-                Serial.print(
-                    "[Cloud] Sensor "
-                );
-
-                Serial.print(
-                    sensorId
-                );
-
-                Serial.print(
-                    " changed remotely -> "
-                );
-
-                Serial.println(
-                    enabled
-                        ? "ON"
-                        : "OFF"
-                );
-            }
+            continue;
         }
-    }
 
+        sensor->enabled = enabled;
+
+        if (!enabled)
+        {
+            sensor->temperatureC = NAN;
+        }
+
+        Serial.print("[Cloud] Sensor ");
+        Serial.print(sensorId);
+        Serial.print(" changed remotely -> ");
+        Serial.println(enabled ? "ON" : "OFF");
+    }
 
     return true;
 }
 
-
-// =========================================================
-// GET CURRENT SENSOR STATE
-// =========================================================
-
-bool SupabaseClient::fetchRequest(
-    String& response)
+bool SupabaseClient::fetchRequest(String& response)
 {
-    String url =
-        String(SUPABASE_URL) +
-        "/rest/v1/sensor_state"
-        "?select=sensor_id,enabled"
-        "&order=sensor_id.asc";
-
-
-    WiFiClientSecure client;
-
-    client.setInsecure();
-
-
-    HTTPClient http;
-
-    if (!http.begin(client, url))
+    if (!initializeStateFetchConnection())
     {
         return false;
     }
 
-
-    http.addHeader(
+    stateFetchHttp_.addHeader(
         "apikey",
         SUPABASE_KEY
     );
 
+    const unsigned long start = millis();
+    const int responseCode = stateFetchHttp_.GET();
+    const unsigned long elapsed = millis() - start;
 
-    int responseCode =
-        http.GET();
+    Serial.print("[Cloud] State fetch took ");
+    Serial.print(elapsed);
+    Serial.println(" ms");
 
-
-    if (responseCode != 200)
+    if (responseCode != HTTP_CODE_OK)
     {
-        Serial.print(
-            "[Cloud] State fetch failed: "
-        );
+        Serial.print("[Cloud] State fetch failed: ");
+        Serial.println(responseCode);
 
-        Serial.println(
-            responseCode
-        );
+        if (responseCode > 0)
+        {
+            Serial.println(stateFetchHttp_.getString());
+        }
 
-        Serial.println(
-            http.getString()
-        );
-
-        http.end();
-
+        // Do not recurse here. Retry on the next scheduled state check.
+        resetStateFetchConnection();
         return false;
     }
 
+    // Consume the whole response before the next request reuses the socket.
+    response = stateFetchHttp_.getString();
 
-    response =
-        http.getString();
-
-
-    http.end();
-
+    // Do not call stateFetchHttp_.end() after a successful request.
     return true;
 }

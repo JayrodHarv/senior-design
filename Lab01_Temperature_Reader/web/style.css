@@ -13,14 +13,18 @@ body {
     color: #222;
 }
 .container {
-    width: min(1100px, 95%);
-    margin: 40px auto;
+    display: grid;
+    grid-template-columns: minmax(320px, 5fr) minmax(520px, 7fr);
+    gap: 20px;
+    width: min(1600px, calc(100% - 48px));
+    margin: 32px auto;
 }
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    grid-column: 1 / -1;
+    margin-bottom: 4px;
 }
 h1 {
     margin: 0;
@@ -29,9 +33,24 @@ h1 {
     background: white;
     border-radius: 12px;
     padding: 24px;
-    margin-bottom: 20px;
     box-shadow:
         0 2px 10px rgba(0, 0, 0, 0.08);
+}
+.current-card,
+.chart-card {
+    grid-column: 1 / -1;
+}
+.chart-card {
+    padding-bottom: 18px;
+}
+.controls-card {
+    grid-column: 1;
+}
+.alerts-card {
+    grid-column: 2;
+}
+.card > h2:first-child {
+    margin-top: 0;
 }
 .status {
     padding: 8px 14px;
@@ -57,7 +76,8 @@ select {
 }
 .chart-container {
     position: relative;
-    height: 400px;
+    width: 100%;
+    height: clamp(480px, 58vh, 680px);
 }
 .sensor-control {
     display: flex;
@@ -119,15 +139,26 @@ button:active {
     button {
         flex: 1;
     }
-    .chart-container {
-        height: 300px;
-    }
 }
 
 .temperatures {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px 60px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 18px;
+}
+.temperatures > div {
+    min-width: 0;
+    padding: 18px 20px;
+    border: 1px solid #e7e9ee;
+    border-radius: 10px;
+    background: #fafbfc;
+}
+.temperatures h3 {
+    margin: 0;
+}
+.temperatures .temperature {
+    margin: 12px 0;
 }
 .sensor-1 .temperature { color: #dc2626; }
 .sensor-2 .temperature { color: #2563eb; }
@@ -182,8 +213,69 @@ button:active {
     font-size: 14px;
     min-height: 1.2em;
 }
+
+@media (max-width: 1000px) {
+    .container {
+        grid-template-columns: 1fr;
+        width: min(920px, calc(100% - 32px));
+        margin: 24px auto;
+    }
+    .current-card,
+    .chart-card,
+    .controls-card,
+    .alerts-card {
+        grid-column: 1;
+    }
+    .chart-container {
+        height: clamp(420px, 55vh, 560px);
+    }
+}
+
 @media (max-width: 700px) {
+    .container {
+        width: min(100% - 20px, 620px);
+        gap: 12px;
+        margin: 16px auto;
+    }
+    .card {
+        padding: 18px;
+    }
     .alert-control {
         flex-basis: 100%;
+    }
+    .temperatures {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .temperatures > div {
+        padding: 16px;
+    }
+    .temperature {
+        font-size: clamp(34px, 12vw, 48px);
+    }
+    .chart-container {
+        height: clamp(340px, 56vh, 440px);
+    }
+}
+
+@media (max-width: 420px) {
+    .container {
+        width: calc(100% - 12px);
+        margin: 10px auto;
+    }
+    .card {
+        padding: 14px;
+        border-radius: 10px;
+    }
+    .chart-card {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .chart-card h2 {
+        padding: 0 6px;
+        font-size: 20px;
+    }
+    .chart-container {
+        height: 340px;
     }
 }
