@@ -24,27 +24,27 @@ The design is expected to be developed using a **rapid-prototyping approach**: g
 - [x] The system includes a computer (desktop, laptop, or equivalent) used for the user interface, display, and control.
 - [x] The system includes **two thermometer sensors**.
 - [x] Each thermometer sensor is located at the end of a **1.0 ± 0.1 meter cable**.
-- [ ] The sensor/cable assemblies are mechanically robust enough to withstand normal handling and bouncing around without breaking.
-- [ ] The temperature sensors are not damaged when placed in ice water.
-- [ ] The system includes a separate **third box** containing, at minimum:
+- [x] The sensor/cable assemblies are mechanically robust enough to withstand normal handling and bouncing around without breaking.
+- [x] The temperature sensors are not damaged when placed in ice water.
+- [x] The system includes a separate **third box** containing, at minimum:
   - [x] A local display.
   - [x] Buttons.
-  - [ ] A battery.
-  - [ ] A power switch.
-- [ ] The third box and sensors can operate together as a **battery-powered thermometer**.
+  - [x] A battery.
+  - [x] A power switch.
+- [x] The third box and sensors can operate together as a **battery-powered thermometer**.
 - [x] Temperature data from the thermometer is available over the internet.
 - [x] The system includes a cellphone or email destination capable of receiving alert messages.
 
 ## 2. Mechanical Requirements for the Third Box
 
-- [ ] The third box is enclosed.
+- [x] The third box is enclosed.
 - [ ] The third box is physically robust enough to survive being dropped from a workbench to the floor.
 - [ ] The third box continues working when turned upside down.
 - [ ] The internal circuit remains operational when the box is turned upside down.
 - [ ] Connectors remain operational when the box is turned upside down.
 - [ ] Switches/buttons remain operational when the box is turned upside down.
-- [ ] All cable connections to the third box terminate in connectors that are **securely mounted to the box**.
-- [ ] The connectors are designed to be easily connected and disconnected by a casual user.
+- [x] All cable connections to the third box terminate in connectors that are **securely mounted to the box**.
+- [x] The connectors are designed to be easily connected and disconnected by a casual user.
 - [ ] If the box is dropped with cables attached, the connectors do not break.
 - [ ] If the box is dropped with cables attached, the cables do not break.
 - [ ] It is acceptable for cables/connectors to become disconnected during a drop, as long as they are not damaged.
@@ -53,30 +53,30 @@ The design is expected to be developed using a **rapid-prototyping approach**: g
 
 ## 3. Main Power Switch
 
-- [ ] The switch on the third box functions as the system **on/off switch**.
-- [ ] When the switch is **off**, the thermometer system cannot display temperatures locally.
-- [ ] When the switch is **off**, temperature data is not available from the internet.
+- [x] The switch on the third box functions as the system **on/off switch**.
+- [x] When the switch is **off**, the thermometer system cannot display temperatures locally.
+- [x] When the switch is **off**, temperature data is not available from the internet.
 
 ## 4. Local Third-Box Operation
 
-- [ ] When the main switch is **on**, local thermometer functionality is available.
+- [x] When the main switch is **on**, local thermometer functionality is available.
 - [x] Sensor 1 has its own button/control.
 - [x] Sensor 2 has its own button/control.
 - [x] When Sensor 1 is enabled, the local display shows Sensor 1's temperature in degrees Celsius.
 - [x] When Sensor 2 is enabled, the local display shows Sensor 2's temperature in degrees Celsius.
-- [ ] When Sensor 1 is disabled, the display shows **“Sensor 1 off”** or equivalent.
-- [ ] When Sensor 2 is disabled, the display shows **“Sensor 2 off”** or equivalent.
+- [x] When Sensor 1 is disabled, the display shows **“Sensor 1 off”** or equivalent.
+- [x] When Sensor 2 is disabled, the display shows **“Sensor 2 off”** or equivalent.
 - [ ] Pressing a sensor button causes the correct temperature/status to appear with **no noticeable delay**.
 - [ ] Local button/display response time is approximately **20 ms or less** so that delay is not noticeable.
-- [ ] The display is clearly readable under normal indoor lighting.
-- [ ] The display correctly represents all temperatures within the required operating range.
-- [ ] Both sensors can be enabled at the same time.
-- [ ] Both sensors can be disabled at the same time.
-- [ ] Sensor 1 can be enabled while Sensor 2 is disabled.
-- [ ] Sensor 2 can be enabled while Sensor 1 is disabled.
-- [ ] The display shows the correct information for all combinations of sensor on/off states.
-- [ ] If Sensor 1 is unplugged or otherwise malfunctioning, the local display notifies the user of an error.
-- [ ] If Sensor 2 is unplugged or otherwise malfunctioning, the local display notifies the user of an error.
+- [x] The display is clearly readable under normal indoor lighting.
+- [x] The display correctly represents all temperatures within the required operating range.
+- [x] Both sensors can be enabled at the same time.
+- [x] Both sensors can be disabled at the same time.
+- [x] Sensor 1 can be enabled while Sensor 2 is disabled.
+- [x] Sensor 2 can be enabled while Sensor 1 is disabled.
+- [x] The display shows the correct information for all combinations of sensor on/off states.
+- [x] If Sensor 1 is unplugged or otherwise malfunctioning, the local display notifies the user of an error.
+- [x] If Sensor 2 is unplugged or otherwise malfunctioning, the local display notifies the user of an error.
 
 ## 5. Computer / Web Interface
 
@@ -115,7 +115,7 @@ The design is expected to be developed using a **rapid-prototyping approach**: g
 - [x] The graph always represents a total history of **300 seconds**.
 - [ ] The horizontal axis is labeled as **seconds ago from the current time**.
 - [ ] The horizontal axis runs from approximately **300 seconds ago on the left to 0 seconds ago on the right**.
-- [ ] Missing data is clearly visible on the graph.
+- [x] Missing data is clearly visible on the graph.
 - [ ] Missing data is visually distinguishable from data that is simply above or below the graph's scale.
 - [x] If the third box is off, the graph continues scrolling and records the affected interval as missing data.
 - [x] If a sensor is unplugged, the graph continues scrolling and records the affected interval as missing data.
@@ -136,16 +136,16 @@ The design is expected to be developed using a **rapid-prototyping approach**: g
 - [x] The user can change the **low-temperature alert message** from the computer interface.
 - [x] The user can change the **maximum temperature threshold** from the computer interface.
 - [x] The user can change the **minimum temperature threshold** from the computer interface.
-- [ ] The user can change the destination **phone number and/or email address** from the computer interface.
+- [x] The user can change the destination **phone number and/or email address** from the computer interface.
 
 ## 8. Temperature Operating Range and Verification
 
-- [ ] The design supports displaying temperatures over at least **-10 °C to +63 °C**.
-- [ ] The -10 °C to +63 °C operating range is addressed in the design even if the full range is not physically tested.
+- [x] The design supports displaying temperatures over at least **-10 °C to +63 °C**.
+- [x] The -10 °C to +63 °C operating range is addressed in the design even if the full range is not physically tested.
 - [x] Holding a temperature sensor in a person's hand causes its measured temperature to rise after a few seconds.
-- [ ] Holding a soldering iron close to, or briefly touching, a sensor causes its measured temperature to rise more quickly.
+- [x] Holding a soldering iron close to, or briefly touching, a sensor causes its measured temperature to rise more quickly.
 - [x] At normal laboratory room temperature, the thermometer reads approximately **22 °C ± 4 °C**.
-- [ ] In a water-ice mixture, the thermometer reads approximately **0 °C ± 2 °C**.
+- [x] In a water-ice mixture, the thermometer reads approximately **0 °C ± 2 °C**.
 
 ---
 
