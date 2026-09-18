@@ -162,6 +162,7 @@ button:active {
 }
 .sensor-1 .temperature { color: #dc2626; }
 .sensor-2 .temperature { color: #2563eb; }
+.temperatures .disconnected { color: #b91c1c; }
 
 .alert-settings {
     display: flex;

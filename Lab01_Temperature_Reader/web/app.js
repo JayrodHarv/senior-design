@@ -3,11 +3,15 @@ const SUPABASE_KEY = "sb_publishable_sbNdNAgtIPJu5M8eq8u4uQ_yZfwFBnN";
 
 const WINDOW_MS = 300_000;
 const MAX_READING_GAP_MS = 5_000;
+const SENSOR_DISCONNECT_TIMEOUT_MS = 5_000;
 const TEMPERATURE_POLL_INTERVAL_MS = 500;
 const TEMPERATURE_POLL_OVERLAP_MS = 2_000;
 const TEMPERATURE_POLL_BATCH_SIZE = 100;
 const SENSOR_IDS = [1, 2];
 const SENSOR_COLORS = ["#dc2626", "#2563eb"];
+const CHART_MIN_C = 10;
+const CHART_MAX_C = 50;
+const OUT_OF_RANGE_COLOR = "#ea580c";
 
 const client = supabase.createClient(
     SUPABASE_URL,
@@ -27,6 +31,8 @@ const displayTemperature = (celsius) =>
 
 const readings = new Map();
 const latest = new Map();
+const sensorEnabled = new Map();
+const waitingSince = new Map(SENSOR_IDS.map((sensor) => [sensor, Date.now()]));
 const alertThresholds = new Map();
 
 let refreshing = false;
@@ -48,7 +54,11 @@ function createSensorDataset(id, index) {
         borderColor: color,
         backgroundColor: color,
         borderWidth: 2,
-        pointRadius: 1,
+        pointRadius: (ctx) => ctx.raw?.outOfRange ? 3 : 1,
+        pointBackgroundColor: (ctx) =>
+            ctx.raw?.outOfRange ? OUT_OF_RANGE_COLOR : color,
+        pointBorderColor: (ctx) =>
+            ctx.raw?.outOfRange ? OUT_OF_RANGE_COLOR : color,
         pointHoverRadius: 5,
         cubicInterpolationMode: "monotone",
 
@@ -61,7 +71,9 @@ function createSensorDataset(id, index) {
 
                 return gap > MAX_READING_GAP_MS
                     ? "transparent"
-                    : color;
+                    : ctx.p0.raw.outOfRange || ctx.p1.raw.outOfRange
+                        ? OUT_OF_RANGE_COLOR
+                        : color;
             }
         }
     };
@@ -141,7 +153,8 @@ const chart = new Chart(
 
                         label: (item) =>
                             `${item.dataset.label}: ` +
-                            `${item.parsed.y.toFixed(1)} °${unit}`
+                            `${(item.raw.actualTemperature ?? item.parsed.y).toFixed(1)} °${unit}` +
+                            (item.raw.outOfRange ? " (out of range)" : "")
                     }
                 }
             },
@@ -168,8 +181,8 @@ const chart = new Chart(
 
                 y: {
                     position: "right",
-                    min: 10,
-                    max: 50,
+                    min: CHART_MIN_C,
+                    max: CHART_MAX_C,
 
                     title: {
                         display: true,
@@ -283,8 +296,10 @@ function render() {
                             x: point.x,
                             y:
                                 displayTemperature(
-                                    point.y
-                                )
+                                    Math.min(CHART_MAX_C, Math.max(CHART_MIN_C, point.y))
+                                ),
+                            actualTemperature: displayTemperature(point.y),
+                            outOfRange: point.y < CHART_MIN_C || point.y > CHART_MAX_C
                         })
                     );
         }
@@ -332,10 +347,10 @@ function render() {
         now;
 
     chart.options.scales.y.min =
-        displayTemperature(10);
+        displayTemperature(CHART_MIN_C);
 
     chart.options.scales.y.max =
-        displayTemperature(50);
+        displayTemperature(CHART_MAX_C);
 
     chart.options.scales.y.title.text =
         `Temperature (°${unit})`;
@@ -347,17 +362,37 @@ function render() {
         const point =
             latest.get(sensor);
 
-        element(
+        const disabled = sensorEnabled.get(sensor) === false;
+        // The firmware skips uploads for disconnected sensors. Infer a
+        // disconnect when readings stop, allowing time for the first upload.
+        const disconnected = !disabled &&
+            now - Math.max(point?.x ?? 0, waitingSince.get(sensor)) >=
+                SENSOR_DISCONNECT_TIMEOUT_MS;
+        const temperature = element(
             `temperature-${sensor}`
-        ).textContent =
-            point
+        );
+        const lastUpdate = element(
+            `last-update-${sensor}`
+        );
+
+        temperature.classList.toggle("disconnected", disconnected);
+        lastUpdate.classList.toggle("disconnected", disconnected);
+
+        temperature.textContent =
+            disabled
+                ? `-- °${unit}`
+                : disconnected
+                    ? "Error"
+                    : point
                 ? `${displayTemperature(point.y).toFixed(1)} °${unit}`
                 : `-- °${unit}`;
 
-        element(
-            `last-update-${sensor}`
-        ).textContent =
-            point
+        lastUpdate.textContent =
+            disabled
+                ? "Sensor off"
+                : disconnected
+                    ? "Device disconnected"
+                    : point
                 ? `Last update: ${formatTime(point.x)}` +
                   `${point.x < cutoff ? " (stale)" : ""}`
                 : "Waiting for data...";
@@ -531,6 +566,12 @@ function updateSensorStatus(row) {
         return;
     }
 
+    if (row.enabled === true && sensorEnabled.get(sensor) === false) {
+        waitingSince.set(sensor, Date.now());
+        latest.delete(sensor);
+    }
+    sensorEnabled.set(sensor, row.enabled);
+
     element(
         `sensor-${sensor}-status`
     ).textContent =
@@ -539,6 +580,8 @@ function updateSensorStatus(row) {
             : row.enabled
                 ? "🟢 ON"
                 : "🔴 OFF";
+
+    render();
 }
 
 async function loadSensorState() {
