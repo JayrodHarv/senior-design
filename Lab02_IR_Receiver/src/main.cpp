@@ -66,12 +66,19 @@ void loop()
 {
     receiver.update();
 
-    // BeamDetector stays "broken" until the beam is seen once, so the first
-    // change after boot is always to intact and no alert is sent at boot.
-    const bool changed = beam.update(receiver.isDetected(), millis());
+       // Send whenever the LED changes, but only after the beam
+    // has been seen once (avoids a false alert at boot).
+    static bool armed = false;
+    static bool lastDetected = true;
+    const bool detected = receiver.isDetected();
+
+    if (!armed && detected) armed = true;
+
+    const bool changed = armed && (detected != lastDetected);
     if (changed)
     {
-        broken = beam.isBroken();
+        lastDetected = detected;
+        broken = !detected;
         brokenDirty = true;
         ++revision;
 
