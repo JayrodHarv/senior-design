@@ -5,12 +5,13 @@
 
 #include "NetworkManager.h"
 #include "BeamDetector.h"
-#include "IrFilter.h"
+#include "IrReceiver.h"
 #include "SupabaseClient.h"
 #include "Config.h"
 
 NetworkManager network;
 BeamDetector beam;
+IRReceiver receiver;
 
 // Only copies cross task boundaries. The main loop owns the live beam state.
 struct BackgroundWork
@@ -50,7 +51,7 @@ void setup()
     delay(100);
     Serial.println("ESP32 IR Beam-Break Detector");
 
-    IrFilter::begin();
+    receiver.begin();
     network.begin();
 
     workQueue = xQueueCreate(1, sizeof(BackgroundWork));
@@ -63,9 +64,11 @@ void setup()
 
 void loop()
 {
+    receiver.update();
+
     // BeamDetector stays "broken" until the beam is seen once, so the first
     // change after boot is always to intact and no alert is sent at boot.
-    const bool changed = beam.update(IrFilter::beamPresent(), millis());
+    const bool changed = beam.update(receiver.isDetected(), millis());
     if (changed)
     {
         broken = beam.isBroken();
@@ -99,6 +102,4 @@ void loop()
             lastStateAttempt = now;
         }
     }
-
-    delay(5);
 }
